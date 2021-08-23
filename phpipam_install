@@ -1,0 +1,25 @@
+#!/bin/bash
+
+
+apt-get update
+
+apt-get -y upgrade
+
+apt-get -y install apache2 git php php-gmp php-ldap php-json php-cli php-mbstring mariadb-server php-mysql php-gd php-curl php-dom php-pear
+
+git clone --recursive https://github.com/phpipam/phpipam.git /var/www/phpipam
+
+cd /var/www/phpipam
+
+git checkout -b v1.4.4 origin/1.4
+
+cp config.dist.php config.php
+
+mysql -u root -e "create database phpipam; grant all on phpipam.* to 'phpipam'@'localhost' identified by 'phpipamadmin';"
+
+chown -R www-data:www-data /var/www/phpipam/
+
+a2enmod ssl
+a2enmod rewrite
+
+systemctl restart apache2.service 
