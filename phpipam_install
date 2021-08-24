@@ -7,9 +7,9 @@ apt-get -y upgrade
 
 apt-get -y install apache2 git php php-gmp php-ldap php-json php-cli php-mbstring mariadb-server php-mysql php-gd php-curl php-dom php-pear
 
-git clone --recursive https://github.com/phpipam/phpipam.git /var/www/html
+git clone --recursive https://github.com/phpipam/phpipam.git /var/www/phpipam
 
-cd /var/www/html
+cd /var/www/phpipam
 
 git checkout -b v1.4.4 origin/1.4
 
@@ -17,10 +17,37 @@ cp config.dist.php config.php
 
 mysql -u root -e "create database phpipam; grant all on phpipam.* to 'phpipam'@'localhost' identified by 'phpipamadmin';"
 
-chown -R www-data:www-data /var/www/phpipam/
+chown -R www-data:www-data /var/www/phpipam
+
+cat > /etc/apache2/sites-available/default-ssl.conf <<- "EOF"
+<IfModule mod_ssl.c>
+        <VirtualHost _default_:443>
+                ServerAdmin webmaster@localhost
+
+                DocumentRoot /var/www/phpipam
+
+                ErrorLog ${APACHE_LOG_DIR}/error.log
+                CustomLog ${APACHE_LOG_DIR}/access.log combined
+
+                SSLEngine on
+
+                SSLCertificateFile      /etc/ssl/certs/ssl-cert-snakeoil.pem
+                SSLCertificateKeyFile /etc/ssl/private/ssl-cert-snakeoil.key
+
+                <FilesMatch "\.(cgi|shtml|phtml|php)$">
+                                SSLOptions +StdEnvVars
+                </FilesMatch>
+                <Directory /usr/lib/cgi-bin>
+                                SSLOptions +StdEnvVars
+                </Directory>
+
+        </VirtualHost>
+</IfModule>
+EOF
 
 a2enmod ssl
 a2enmod rewrite
 a2ensite default-ssl
 
 systemctl restart apache2.service 
+
